@@ -1,0 +1,160 @@
+.\" format with nroff|troff|groff -man
+.TH REFRESSHER 1 
+.fp 5 CW
+.nr mH 5
+.de H0
+.nr mH 0
+.in 5n
+\fB\\$1\fP
+.in 7n
+..
+.de H1
+.nr mH 1
+.in 7n
+\fB\\$1\fP
+.in 9n
+..
+.de H2
+.nr mH 2
+.in 11n
+\fB\\$1\fP
+.in 13n
+..
+.de H3
+.nr mH 3
+.in 15n
+\fB\\$1\fP
+.in 17n
+..
+.de H4
+.nr mH 4
+.in 19n
+\fB\\$1\fP
+.in 21n
+..
+.de OP
+.nr mH 0
+.ie !'\\$1'-' \{
+.ds mO \\fB\\-\\$1\\fP
+.ds mS ,\\0
+.\}
+.el \{
+.ds mO \\&
+.ds mS \\&
+.\}
+.ie '\\$2'-' \{
+.if !'\\$4'-' .as mO \\0\\fI\\$4\\fP
+.\}
+.el \{
+.as mO \\*(mS\\fB\\-\\-\\$2\\fP
+.if !'\\$4'-' .as mO =\\fI\\$4\\fP
+.\}
+.in 5n
+\\*(mO
+.in 9n
+..
+.de SP
+.if \\n(mH==2 .in 9n
+.if \\n(mH==3 .in 13n
+.if \\n(mH==4 .in 17n
+..
+.de FN
+.nr mH 0
+.in 5n
+\\$1 \\$2
+.in 9n
+..
+.de DS
+.in +3n
+.ft 5
+.nf
+..
+.de DE
+.fi
+.ft R
+.in -3n
+..
+.SH NAME
+refressher \-\- Review Tool for OpenSSH Configuration Files
+.SH SYNOPSIS
+\fBrefressher\fP\ [\ \fIoptions\fP\ ]
+.SH DESCRIPTION
+refressher is a tool for reviewing OpenSSH configuration files\&. It can identify undocumented settings (often unsupported historic settings), and
+cases where the value defined is equivalent to the current default for that setting\&. These can be extracted for review, or removed from generated
+output\&. Additionally, it provides a future\-proof pretty printer by ingesting man pages at runtime and formatting according to the style used in
+the documentation\&. The resulting output is sorted (by default) to minimize diffs with configuration under version control\&. The intent of this
+tool is to reduce cognitive load when reviewing and modifying configuration\&.
+.SH OPTIONS
+.OP h - flag -
+Display help text and exit\&.
+.OP V - flag -
+Display version and exit\&.
+.OP f file string file
+Path to configuration file\&. Default depends on \-\-type:
+.H2 \-\-type=server
+The default value is /etc/ssh/sshd_config\&.
+.H2 \-\-type=client
+The default value is ${HOME}/\&.ssh/config\&.
+.OP c comment string action drop
+How to handle comments\&.
+The default value is \fBdrop\fP\&.
+.OP d default string action keep
+How to handle options set to default values\&.
+The default value is \fBkeep\fP\&.
+.OP e empty string action drop
+How to handle empty lines\&.
+The default value is \fBdrop\fP\&.
+.OP n no\-sort flag -
+Do not sort output\&. Useful when using refressher only for formatting\&. Ignores \-d if set\&.
+.OP u unknown string action keep
+How to handle unrecognized keywords\&.
+The default value is \fBkeep\fP\&.
+.OP t type string type server
+Type of configuration to process (client or server)\&.
+The default value is \fBserver\fP\&.
+.OP - show\-license\-text flag -
+Display full license text and exit\&.
+.SH ACTIONS
+For each line of the configuration file, one of the following actions is applied:
+.H1 drop
+Drop lines of this type (they will not appear in output)\&.
+.H1 keep
+Keep lines of this type (they will appear in output)\&.
+.H1 show
+Only show lines of this type\&. Expected output when this is set for multiple types is undefined\&.
+.SH ENVIRONMENT\ VARIABLES
+The default values can be altered to account for platform differences by using the following environment variables:
+.H1 SSHD_CONFIG
+The location of sshd_config\&. The default value is /etc/ssh/sshd_config\&.
+.H1 SSHD_CONFIG_MANUAL_PAGE
+The manual page for sshd_config\&. The default value is sshd_config\&.
+.H1 SSHD_CONFIG_MANUAL_SECTION
+The manual section where the page for sshd_config can be found\&. The default value is 5\&.
+.H1 SSH_CONFIG
+The location of ssh_config\&. The default value is ${HOME}/\&.ssh/config\&.
+.H1 SSH_CONFIG_MANUAL_PAGE
+The manual page for ssh_config\&. The default value is ssh_config\&.
+.H1 SSH_CONFIG_MANUAL_SECTION
+The manual section where the page for ssh_config can be found\&. The default value is 5\&.
+.SH EXIT\ STATUS
+.H1 0
+Success
+.H1 1
+Failure
+.H1 100
+Error (Permanent)
+.H1 111
+Error (Temporary)
+.SH SEE\ ALSO
+sshd_config(5), ssh_config(5)
+.SH IMPLEMENTATION
+.H0 version
+1\&.0\&.0
+.H0 author
+Chris Olstrom <chris@olstrom\&.com>
+.H0 copyright
+Copyright (c) 2017 Chris Olstrom
+.H0 copyright
+Copyright (c) 2017 SUSE LLC
+.H0 license
+MIT (use \-\-show\-license\-text for full text)
