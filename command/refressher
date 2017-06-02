@@ -29,17 +29,17 @@ THE SOFTWARE.
 }
 
 # Platform-specific configuration.
-namespace platform {
+platform=(
     sshd_config=${SSHD_CONFIG:-/etc/ssh/sshd_config}
     sshd_config_manual_page=${SSHD_CONFIG_MANUAL_PAGE:-sshd_config}
     sshd_config_manual_section=${SSHD_CONFIG_MANUAL_SECTION:-5}
     ssh_config=${SSH_CONFIG:-${HOME}/.ssh/config}
     ssh_config_manual_page=${SSH_CONFIG_MANUAL_PAGE:-ssh_config}
     ssh_config_manual_section=${SSH_CONFIG_MANUAL_SECTION:-5}
-}
+)
 
 # Internal namespace for program.
-namespace program {
+program=(
     name=${0##*/}              # The name the program was invoked with.
     canonical_name=refressher  # The actual name of the program.
     version=1.0.0              # This program uses Semantic Versioning 2.0.0
@@ -58,68 +58,46 @@ namespace program {
         sshd
     )
 
-    # Resolves path of all external commands and binds them to
-    # ${.platform.$requirement}, for use elsewhere in this program.
-    function requirements {
-        typeset status=0
-
-        for requirement in ${_.requirements[@]}
-        do
-            typeset -n ENV=${requirement}
-
-            if whence=${ENV:-$(whence ${requirement})}
-            then
-                readonly .platform.${requirement}=${whence}
-            else
-	              print -r -u 2 "[WARNING] Missing '${requirement}'"
-	              status=111
-	          fi
-        done
-
-        return ${status}
-    }
-
     # Defaults for options
-    typeset -A options=(
-        [comment]=drop
-        [default]=keep
-        [empty]=drop
-        [sort]=true
-        [type]=server
-        [unknown]=keep
+    typeset -C options=(
+        comment=drop
+        default=keep
+        empty=drop
+        sort=true
+        type=server
+        unknown=keep
     )
 
     # optstring for getopts
-    typeset usage="
-[-1c]
-[+NAME?${canonical_name} -- Review Tool for OpenSSH Configuration Files]
-[-version?${version}]
+    typeset usage="[-1c]
+[+NAME?${program.canonical_name} -- Review Tool for OpenSSH Configuration Files]
+[-version?${program.version}]
 [-author?Chris Olstrom <chris@olstrom.com>]
 [-copyright?Copyright (c) 2017 Chris Olstrom]
 [-copyright?Copyright (c) 2017 SUSE LLC]
 [-license?MIT (use --show-license-text for full text)]
-[+DESCRIPTION?${canonical_name} is a tool for reviewing OpenSSH configuration
-files. It can identify undocumented settings (often unsupported historic
-settings), and cases where the value defined is equivalent to the current
-default for that setting. These can be extracted for review, or removed from
-generated output. Additionally, it provides a future-proof pretty printer by
-ingesting man pages at runtime and formatting according to the style used in the
-documentation. The resulting output is sorted (by default) to minimize diffs
+[+DESCRIPTION?${program.canonical_name} is a tool for reviewing OpenSSH
+configuration files. It can identify undocumented settings (often unsupported
+historic settings), and cases where the value defined is equivalent to the
+current default for that setting. These can be extracted for review, or removed
+from generated output. Additionally, it provides a future-proof pretty printer
+by ingesting man pages at runtime and formatting according to the style used in
+the documentation. The resulting output is sorted (by default) to minimize diffs
 with configuration under version control. The intent of this tool is to reduce
 cognitive load when reviewing and modifying configuration.]
 [h?Display help text and exit.]
 [V?Display version and exit.]
 [f:file]:[file?Path to configuration file. Default depends on --type:]{
-[+--type=server?The default value is ${.platform.sshd_config}.]
+[+--type=server?The default value is ${platform.sshd_config}.]
 [+--type=client?The default value is \${HOME}/.ssh/config.]
 }
-[c:comment]:[action:=${options[comment]}?How to handle comments.]
-[d:default]:[action:=${options[default]}?How to handle options set to default
+[c:comment]:[action:=${program.options.comment}?How to handle comments.]
+[d:default]:[action:=${program.options.default}?How to handle options set to default
 values.]
-[e:empty]:[action:=${options[empty]}?How to handle empty lines.]
-[n:no-sort?Do not sort output. Useful when using ${canonical_name} only for
-formatting. Ignores -d if set.]
-[u:unknown]:[action:=${options[unknown]}?How to handle unrecognized keywords.]
+[e:empty]:[action:=${program.options.empty}?How to handle empty lines.]
+[n:no-sort?Do not sort output. Useful when using ${program.canonical_name} only
+for formatting. Ignores -d if set.]
+[u:unknown]:[action:=${program.options.unknown}?How to handle unrecognized keywords.]
 [t:type]:[type:=server?Type of configuration to process (client or server).]
 [99:show-license-text?Display full license text and exit.]
 [+ACTIONS?For each line of the configuration file, one of the following actions
@@ -133,17 +111,17 @@ multiple types is undefined.]
 platform differences by using the following environment variables:]
 {
 [+SSHD_CONFIG?The location of sshd_config. The default value is
-${.platform.sshd_config}.]
+${platform.sshd_config}.]
 [+SSHD_CONFIG_MANUAL_PAGE?The manual page for sshd_config. The default value is
-${.platform.sshd_config_manual_page}.]
+${platform.sshd_config_manual_page}.]
 [+SSHD_CONFIG_MANUAL_SECTION?The manual section where the page for sshd_config
-can be found. The default value is ${.platform.sshd_config_manual_section}.]
+can be found. The default value is ${platform.sshd_config_manual_section}.]
 [+SSH_CONFIG?The location of ssh_config. The default value is
 \${HOME}/.ssh/config.]
 [+SSH_CONFIG_MANUAL_PAGE?The manual page for ssh_config. The default value is
-${.platform.ssh_config_manual_page}.]
+${platform.ssh_config_manual_page}.]
 [+SSH_CONFIG_MANUAL_SECTION?The manual section where the page for ssh_config can
-be found. The default value is ${.platform.ssh_config_manual_section}.]
+be found. The default value is ${platform.ssh_config_manual_section}.]
 }
 [+EXIT STATUS]{
 [+0?Success]
@@ -152,9 +130,30 @@ be found. The default value is ${.platform.ssh_config_manual_section}.]
 [+111?Error (Temporary)]
 }
 [+SEE ALSO?
-${.platform.sshd_config_manual_page}(${.platform.sshd_config_manual_section}),
-${.platform.ssh_config_manual_page}(${.platform.ssh_config_manual_section})]
+${platform.sshd_config_manual_page}(${platform.sshd_config_manual_section}),
+${platform.ssh_config_manual_page}(${platform.ssh_config_manual_section})]
 "
+)
+
+# Resolves path of all external commands and binds them to
+# ${.platform.$requirement}, for use elsewhere in this program.
+function requirements {
+    typeset status=0
+
+    for requirement in ${program.requirements[@]}
+    do
+        typeset -n ENV=${requirement}
+
+        if whence=${ENV:-$(whence ${requirement})}
+        then
+            readonly platform.${requirement}=${whence}
+        else
+	          print -r -u 2 "[WARNING] Missing '${requirement}'"
+	          status=111
+	      fi
+    done
+
+    return ${status}
 }
 
 ########################
@@ -164,15 +163,15 @@ ${.platform.ssh_config_manual_page}(${.platform.ssh_config_manual_section})]
 
 # Remove formatting from man pages
 function strip_man_page_formatting {
-    ${.platform.cat} -vt ${1:-} \
-        | ${.platform.sed} 's#\^H.##g'
+    ${platform.cat} -vt ${1:-} \
+        | ${platform.sed} 's#\^H.##g'
 }
 
 # Print the manual page, with formatting removed.
 function manual {
-    case ${.program.options[type]} in
-        client) ${.platform.man} ${.platform.ssh_config_manual_section}  ${.platform.ssh_config_manual_page}  ;;
-        server) ${.platform.man} ${.platform.sshd_config_manual_section} ${.platform.sshd_config_manual_page} ;;
+    case ${program.options.type} in
+        client) ${platform.man} -s ${platform.ssh_config_manual_section}  ${platform.ssh_config_manual_page}  ;;
+        server) ${platform.man} -s ${platform.sshd_config_manual_section} ${platform.sshd_config_manual_page} ;;
     esac \
         | strip_man_page_formatting
 }
@@ -183,8 +182,8 @@ function lookup_keyword_in_manual {
     typeset -l keyword=${1}
 
     print -r -- "${MANUAL}" \
-        | ${.platform.grep} -i "^[[:space:]]*${keyword}\$" \
-        | ${.platform.awk} '{ print $1 }'
+        | ${platform.grep} -i "^[[:space:]]*${keyword}\$" \
+        | ${platform.awk} '{ print $1 }'
 }
 
 # Special cases for keywords with awkward formatting in the manual(s).
@@ -193,7 +192,7 @@ function known_keyword {
 
     typeset -l keyword=${1}
 
-    case ${.program.options[type]} in
+    case ${program.options.type} in
         client)
             case ${keyword} in
                 cipher) print Cipher ;;
@@ -231,38 +230,38 @@ function keyword {
 
 # Sort, unless sorting is disabled via --no-sort
 function handle_sorting {
-    case ${.program.options[sort]} in
-        false) ${.platform.cat}  ;;
-        true)  ${.platform.sort} ;;
+    case ${program.options.sort} in
+        false) ${platform.cat}  ;;
+        true)  ${platform.sort} ;;
         *) exit 100
     esac
 }
 
 # Handle comments according to --comment
 function handle_comments {
-    case ${.program.options[comment]} in
-        drop) ${.platform.awk} '$1 !~ /^#/' ;;
-        keep) ${.platform.cat}              ;;
-        show) ${.platform.awk} '$1 ~ /^#/'  ;;
+    case ${program.options.comment} in
+        drop) ${platform.awk} '$1 !~ /^#/' ;;
+        keep) ${platform.cat}              ;;
+        show) ${platform.awk} '$1 ~ /^#/'  ;;
         *) exit 100
     esac
 }
 
 # Handle empty lines according to --empty
 function handle_empty_lines {
-    case ${.program.options[empty]} in
-        drop) ${.platform.awk} '!/^[[:space:]]*$/' ;;
-        keep) ${.platform.cat}          ;;
-        show) ${.platform.awk} '/^[[:space:]]*$/'   ;;
+    case ${program.options.empty} in
+        drop) ${platform.awk} '!/^[[:space:]]*$/' ;;
+        keep) ${platform.cat}          ;;
+        show) ${platform.awk} '/^[[:space:]]*$/'   ;;
     esac
 }
 
 # Handle unknown keywords according to --unknown
 function handle_unknown_keywords {
-    case ${.program.options[unknown]} in
-        drop) ${.platform.awk} '!/^[a-z]/' ;;
-        keep) ${.platform.cat}             ;;
-        show) ${.platform.awk} '/^[a-z]/'  ;;
+    case ${program.options.unknown} in
+        drop) ${platform.awk} '!/^[a-z]/' ;;
+        keep) ${platform.cat}             ;;
+        show) ${platform.awk} '/^[a-z]/'  ;;
         *) exit 100
     esac
 }
@@ -286,9 +285,9 @@ function format {
 
 # Print defaults according to --type
 function defaults {
-    case ${.program.options[type]} in
-        client) ${.platform.ssh}  -F /dev/null -G localhost ;;
-        server) ${.platform.sshd} -f /dev/null -T           ;;
+    case ${program.options.type} in
+        client) ${platform.ssh}  -F /dev/null -G localhost ;;
+        server) ${platform.sshd} -f /dev/null -T           ;;
         *) exit 100
     esac \
         | format
@@ -297,7 +296,7 @@ function defaults {
 
 # Print the requested configuration file.
 function config {
-    ${.platform.cat} ${.program.options[file]} \
+    ${platform.cat} ${program.options.file} \
         | format \
         | handle_comments \
         | handle_unknown_keywords \
@@ -305,15 +304,15 @@ function config {
 }
 
 function strip_leading_whitespace {
-    ${.platform.awk} '{ gsub(/^[[:space:]]+/,""); print }'
+    ${platform.awk} '{ gsub(/^[[:space:]]+/,""); print }'
 }
 
 # Handle defaults according to --default
 function handle_defaults {
-    case ${.program.options[default]} in
-        drop) ${.platform.comm} -13 <(defaults) <(config) ;;
-        keep) ${.platform.comm} -1  <(defaults) <(config) ;;
-        show) ${.platform.comm} -12 <(defaults) <(config) ;;
+    case ${program.options.default} in
+        drop) ${platform.comm} -13 <(defaults) <(config) ;;
+        keep) ${platform.comm} -1  <(defaults) <(config) ;;
+        show) ${platform.comm} -12 <(defaults) <(config) ;;
         *) exit 100
     esac \
         | strip_leading_whitespace
@@ -324,38 +323,38 @@ function handle_defaults {
 ##################
 
 function main {
-    while getopts -a ${.program.name} "${.program.usage}" OPTION
+    while getopts -a ${program.name} "${program.usage}" OPTION
     do
         case ${OPTION} in
             h) ${0} --help;;
             V) ${0} --version;;
-            c) .program.options[comment]=${OPTARG};;
-            d) .program.options[default]=${OPTARG};;
-            e) .program.options[empty]=${OPTARG};;
-            f) .program.options[file]=${OPTARG};;
-            n) .program.options[sort]=false;;
-            t) .program.options[type]=${OPTARG};;
-            u) .program.options[unknown]=${OPTARG};;
+            c) program.options.comment=${OPTARG};;
+            d) program.options.default=${OPTARG};;
+            e) program.options.empty=${OPTARG};;
+            f) program.options.file=${OPTARG};;
+            n) program.options.sort=false;;
+            t) program.options.type=${OPTARG};;
+            u) program.options.unknown=${OPTARG};;
             99) license;;
             '?') return 100;;
         esac
     done
 
     # Use default for --file if none was given.
-    if [[ -z ${.program.options[file]} ]]
+    if [[ -z ${program.options.file} ]]
     then
-        case ${.program.options[type]} in
-            client) .program.options[file]=${.platform.ssh_config};;
-            server) .program.options[file]=${.platform.sshd_config};;
+        case ${program.options.type} in
+            client) program.options.file=${platform.ssh_config};;
+            server) program.options.file=${platform.sshd_config};;
         esac
     fi
 
     shift $(( OPTIND - 1 ))
 
-    .program.requirements \
+    requirements \
         && {
         MANUAL=$(manual)
-        case ${.program.options[sort]} in
+        case ${program.options.sort} in
             false) config          ;;
             true)  handle_defaults ;;
             *) exit 100
